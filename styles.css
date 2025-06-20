@@ -432,7 +432,7 @@ html {
 }
 
 .hero-background {
-    background-image: url('public/images/bg.png');
+    background-image: url('public/images/bg.jpg');
     position: absolute;
     inset: 0;
     background-size: cover;
@@ -797,7 +797,7 @@ html {
 /* 作者信息区域样式 */
 .author-profile {
     background-color: #fff;
-    padding: 40px 0;
+    padding: 20px 0 40px 0;
     /*border-bottom: 1px solid #eee;/* 添加底部边框 */
 }
 
@@ -1183,7 +1183,7 @@ html {
     position: relative;
     
     margin-right: 120px;
-    margin-left: 60px;
+    margin-left: 100px;
 
 }
 .work-modal-content {
@@ -1791,3 +1791,103 @@ html {
 }
 
 
+/* 轮播LOGO行样式 */
+.logo-carousel-container {
+    width: 100%;
+    overflow: hidden; /* 隐藏超出容器的部分，形成滚动效果 */
+    padding: 20px 0;
+    background-color: #ffffff; /* 背景颜色，可根据您的设计调整 */
+    border-top: 1px solid #e0e0e0; /* 可选的顶部边框 */
+    border-bottom: 1px solid #e0e0e0; /* 可选的底部边框 */
+    margin-top: 50px; /* 与上方内容的间距 */
+    margin-bottom: 10px; /* 与下方内容的间距, 如果放在footer上方 */
+}
+
+.logo-carousel-track {
+    display: flex; /* 让LOGO水平排列 */
+    width: fit-content; /* 宽度由内容决定 */
+    animation: scrollLogos 40s linear infinite; /* 动画效果：名称 时长 速度曲线 无限循环 */
+}
+
+.logo-carousel-track img {
+    height: 60px; /* LOGO的统一高度，可调整 */
+    margin: 0 40px; /* LOGO之间的间距 */
+    filter: grayscale(100%); /* 初始为灰度，可选 */
+    opacity: 0.6; /* 初始透明度，可选 */
+    transition: filter 0.3s ease, opacity 0.3s ease; /* 鼠标悬停时的过渡效果 */
+    vertical-align: middle; /* 确保图片垂直居中对齐 */
+}
+
+.logo-carousel-track img:hover {
+    filter: grayscale(0%); /* 鼠标悬停时变为彩色 */
+    opacity: 1; /* 鼠标悬停时不透明 */
+}
+
+/* 定义滚动动画 (保持不变) */
+@keyframes scrollLogosLeftToRight {
+    0% {
+        transform: translateX(-50%);
+    }
+    100% {
+        transform: translateX(0%);
+    }
+}
+
+@keyframes scrollLogosRightToLeft {
+    0% {
+        transform: translateX(0%);
+    }
+    100% {
+        transform: translateX(-50%);
+    }
+}
+/* 鼠标悬停时暂停动画 (可选) */
+.logo-carousel-container:hover .logo-carousel-track {
+    animation-play-state: paused;
+}
+
+.logo-carousel-track img {
+    height: 50px; /* LOGO的统一高度，可调整 */
+    margin: 0 40px; /* LOGO之间的间距 */
+    filter: grayscale(100%); /* 初始为灰度，可选 */
+    opacity: 0.6; /* 初始透明度，可选 */
+    transition: filter 0.3s ease, opacity 0.3s ease, background-color 0.3s ease; /* 鼠标悬停时的过渡效果, 增加了 background-color 的过渡 */
+    vertical-align: middle; /* 确保图片垂直居中对齐 */
+    /* 新增样式 */
+    background-color: #f0f0f0; /* LOGO的背景颜色，您可以根据需要调整 */
+    /* padding: 10px; LOGO图片与背景边缘的内边距，可调整 */
+    border-radius: 100px; /* 可选：为背景添加圆角 */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* 可选：为背景添加轻微阴影 */
+}
+
+.logo-carousel-track img:hover {
+    filter: grayscale(0%); /* 鼠标悬停时变为彩色 */
+    opacity: 1; /* 鼠标悬停时不透明 */
+    background-color: #ffffff; /* 可选：鼠标悬停时改变背景色 */
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15); /* 可选：鼠标悬停时增强阴影 */
+}
+
+/* 为不同的轨道应用不同的动画和调整后的速度 */
+.logo-carousel-track.track-1 {
+    display:flex ;
+    animation: scrollLogosRightToLeft 68s linear infinite; /* 第一列：从右向左，速度较快 */
+    margin-bottom: 20px; /* 为第一行下方添加间距 */
+}
+
+.logo-carousel-track.track-2 {
+    display: flex;
+    animation: scrollLogosLeftToRight 68s linear infinite; /* 第二列：从左向右，速度适中 */
+    margin-bottom: 20px; /* 为第一行下方添加间距 */
+}
+
+.logo-carousel-track.track-3 {
+
+    display: flex;
+    animation: scrollLogosRightToLeft 60s linear infinite; /* 第三列：从右向左，速度更快，形成错落感 */
+    margin-bottom: 5px; /* 为第一行下方添加间距 */
+}
+
+/* 鼠标悬停时暂停动画 (保持不变) */
+.logo-carousel-column:hover .logo-carousel-track {
+    animation-play-state: paused;
+}
