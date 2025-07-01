@@ -835,7 +835,7 @@ html {
 }
 
 .author-name {
-    font-size: 1.8rem;
+    /*font-size: 1.8rem;*/
     margin-bottom: 5px;
     color: #333;
     text-align: center; /* 文本居中 */;
@@ -1806,11 +1806,11 @@ html {
 .logo-carousel-track {
     display: flex; /* 让LOGO水平排列 */
     width: fit-content; /* 宽度由内容决定 */
-    animation: scrollLogos 40s linear infinite; /* 动画效果：名称 时长 速度曲线 无限循环 */
+    animation: scrollLogos 80s linear infinite; /* 动画效果：名称 时长 速度曲线 无限循环 */
 }
 
 .logo-carousel-track img {
-    height: 60px; /* LOGO的统一高度，可调整 */
+    height: 40px; /* LOGO的统一高度，可调整 */
     margin: 0 40px; /* LOGO之间的间距 */
     filter: grayscale(100%); /* 初始为灰度，可选 */
     opacity: 0.6; /* 初始透明度，可选 */
@@ -1826,7 +1826,7 @@ html {
 /* 定义滚动动画 (保持不变) */
 @keyframes scrollLogosLeftToRight {
     0% {
-        transform: translateX(-50%);
+        transform: translateX(-60%);
     }
     100% {
         transform: translateX(0%);
@@ -1838,7 +1838,7 @@ html {
         transform: translateX(0%);
     }
     100% {
-        transform: translateX(-50%);
+        transform: translateX(-60%);
     }
 }
 /* 鼠标悬停时暂停动画 (可选) */
@@ -1847,7 +1847,7 @@ html {
 }
 
 .logo-carousel-track img {
-    height: 50px; /* LOGO的统一高度，可调整 */
+    height: 40px; /* LOGO的统一高度，可调整 */
     margin: 0 40px; /* LOGO之间的间距 */
     filter: grayscale(100%); /* 初始为灰度，可选 */
     opacity: 0.6; /* 初始透明度，可选 */
@@ -1871,13 +1871,13 @@ html {
 .logo-carousel-track.track-1 {
     display:flex ;
     animation: scrollLogosRightToLeft 68s linear infinite; /* 第一列：从右向左，速度较快 */
-    margin-bottom: 20px; /* 为第一行下方添加间距 */
+    margin-bottom: 14px; /* 为第一行下方添加间距 */
 }
 
 .logo-carousel-track.track-2 {
     display: flex;
     animation: scrollLogosLeftToRight 68s linear infinite; /* 第二列：从左向右，速度适中 */
-    margin-bottom: 20px; /* 为第一行下方添加间距 */
+    margin-bottom: 14px; /* 为第一行下方添加间距 */
 }
 
 .logo-carousel-track.track-3 {
