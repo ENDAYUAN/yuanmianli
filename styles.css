@@ -478,7 +478,10 @@ html {
     /* 文本居中 */
 }
 .hero-text p {
-    font-size: 1.1;
+    font-size: 18px;
+    margin-bottom: 1.2px;
+    text-align: center;
+    display: flex;
     opacity: 0.9;
 }
 
