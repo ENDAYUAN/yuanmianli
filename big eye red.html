@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>流体渐变交互球体 - 独立色彩控制版</title>
+    <style>
+        :root {
+            /* 背景色设为透明，以便透出主站背景和彩带 */
+            --bg-color: transparent;
+            --sphere-size: 600px;
+
+            /* 【球体本体配色 - 独立控制】 */
+            --color-1: rgba(255, 255, 255, 0.45);
+            --color-2: rgba(255, 124, 219, 1);
+            --color-3: rgba(255, 220, 46, 1);
+            --color-4: rgba(255, 60, 0, 1);
+            --color-5: rgba(255, 51, 199, 1);
+            --color-6: rgba(190, 51, 255, 1);
+            --color-7: rgba(255, 51, 51, 1);
+
+
+            /* 【外部氛围/投影 - 独立控制】 */
+            --halo-color: rgba(171, 71, 188, 0.3);
+            --blur-sphere-color: rgba(171, 71, 188, 0.4);
+            --shadow-vivid: rgba(0, 0, 0, 0.12);
+
+            /* 动态变量 */
+            --tilt-x: 0deg;
+            --tilt-y: 0deg;
+            --move-x: 0px;
+            --move-y: 0px;
+            --eye-x: 0px;
+            --eye-y: 0px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center; 
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            perspective: 2500px;
+        }
+
+        /* 调色板 UI */
+        .color-palette {
+            display: none;
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background: rgba(255, 255, 255, 0.7);
+            padding: 18px;
+            border-radius: 16px;
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            width: 280px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .palette-title {
+            display: none;
+            color: rgba(0, 0, 0, 0.6);
+            font-size: 11px;
+            font-weight: 700;
+            margin-bottom: 5px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+            padding-bottom: 5px;
+        }
+
+        .control-list {
+            display: none;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .control-row {
+            display: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .control-label {
+            display: none;
+            font-size: 10px;
+            color: rgba(0,0,0,0.5);
+            width: 60px;
+            flex-shrink: 0;
+        }
+
+        .color-input-wrapper {
+            display: none;
+            position: relative;
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .color-input-wrapper input[type="color"] {
+            display: none;
+            position: absolute;
+            top: -5px;
+            left: -5px;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            background: none;
+            border: none;
+        }
+
+        .opacity-slider {
+            display: none;
+            flex: 1;
+            height: 4px;
+            -webkit-appearance: none;
+            background: rgba(0, 0, 0, 0.08);
+            border-radius: 2px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .opacity-slider::-webkit-slider-thumb {
+            display: none;
+            -webkit-appearance: none;
+            width: 12px;
+            height: 12px;
+            background: #333;
+            border-radius: 50%;
+            border: none;
+        }
+
+        /* 保存按钮样式 */
+        .save-btn {
+            display: none;
+            margin-top: 15px;
+            padding: 10px;
+            background: #000;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .save-btn:hover {
+            display: none;
+            background: #333;
+            transform: translateY(-1px);
+        }
+
+        .save-btn:active {
+            display: none;
+            transform: translateY(0);
+        }
+
+        .save-status {
+            display: none;
+            font-size: 10px;
+            color: #2e7d32;
+            margin-top: 8px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        /* 3D 场景容器 */
+        .scene {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center; 
+            z-index: 10;
+            transform-style: preserve-3d;
+            transform: translate(var(--move-x), var(--move-y)) rotateX(var(--tilt-x)) rotateY(var(--tilt-y));
+            transition: transform 0.3s cubic-bezier(0.1, 0.5, 0.2, 1);
+        }
+
+        /* 球体居中容器 */
+        .sphere-container {
+            position: relative; /* 改为相对定位 */
+            width: var(--sphere-size);
+            height: var(--sphere-size);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transform-style: preserve-3d;
+            
+            /* 【修改点】使用 top 代替 margin-top 以强制产生垂直偏移 */
+            top: 360px; 
+        }
+        
+
+        /* 【组件：模糊副球】 */
+        .blur-sphere {
+            position: absolute;
+            top: 0px; 
+            width: 110%;
+            height: 110%;
+            border-radius: 100%;
+            background: radial-gradient(circle at center, var(--blur-sphere-color) 0%, transparent 100%);
+            filter: blur(80px); 
+            z-index: -2;
+            transform: translateZ(-100px); 
+            pointer-events: none;
+        }
+
+        /* 【独立组件：氛围呼吸光晕】 */
+        .halo {
+            position: absolute;
+            inset: -20px; 
+            border-radius: 50%;
+            background: transparent;
+            box-shadow: 
+                0 0 80px var(--halo-color),
+                inset 0 0 60px rgba(255, 255, 255, 0.5);
+            animation: haloPulse 4s ease-in-out infinite;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        @keyframes haloPulse {
+            0%, 100% { transform: scale(1); opacity: 0.3; filter: blur(15px); }
+            50% { 
+                transform: scale(1.15); 
+                opacity: 0.7; 
+                filter: blur(25px);
+                box-shadow: 0 0 120px var(--halo-color), inset 0 0 80px rgba(255, 255, 255, 0.7);
+            }
+        }
+        
+
+        /* 核心球体 */
+        .sphere {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            position: relative;
+            transform-style: preserve-3d;
+            box-shadow: 
+                inset 0 -40px 100px rgba(0,0,0,0.6),
+                inset 0 0 45px rgba(255, 255, 255, 0.4),
+                inset 0 15px 40px rgba(255, 255, 255, 0.2),
+                0 25px 60px var(--shadow-vivid);
+            
+            background: 
+                radial-gradient(circle at 65% 20%, var(--color-1) 0%, transparent 45%),
+                radial-gradient(circle at 0% 40%, var(--color-2) 0%, transparent 65%),
+                radial-gradient(circle at 100% 40%, var(--color-3) 0%, transparent 55%),
+                radial-gradient(circle at 50% 100%, var(--color-4) 0%, #f44336 45%, transparent 85%),
+                radial-gradient(circle at 80% 80%, var(--color-5) 0%, transparent 65%),
+                radial-gradient(circle at 50% 50%, var(--color-6) 0%, var(--color-7) 100%);
+            
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .sphere::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, transparent 50%, rgba(0,0,0,0.05) 100%);
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        /* 面部 */
+        .face {
+            position: absolute;
+            top: 25%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 25px;
+            transform: translateZ(100px); 
+            z-index: 5;
+        }
+
+        .eyes { display: flex; gap: 100px; }
+        .eye {
+            width: 48px; height: 48px;
+            background-color: #ffffff;
+            border-radius: 50%;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .pupil {
+            width: 18px; height: 18px;
+            background-color: #1a1a1a;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(calc(-50% + var(--eye-x)), calc(-50% + var(--eye-y)));
+            transition: transform 0.1s ease-out;
+        }
+
+        .mouth {
+            width: 50px; height: 6px;
+            background-color: #1a1a1a;
+            border-radius: 10px;
+        }
+
+        /* --- A. 侧边小怪兽样式 --- */
+        .peeker {
+            position: absolute;
+            width: 80px; height: 140px;
+            border-radius: 40px 40px 15px 15px;
+            display: flex; flex-direction: column; align-items: center; padding-top: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+            opacity: 0; z-index: -1; pointer-events: none; transform-style: preserve-3d;
+        }
+
+        /* 渐变色 */
+        .l1 { background: linear-gradient(180deg, #ff9a9e 0%, #fad0c4 100%); }
+        .l2 { background: linear-gradient(180deg, #a1c4fd 0%, #c2e9fb 100%); }
+        .r1 { background: linear-gradient(180deg, #84fab0 0%, #8fd3f4 100%); }
+        .r2 { background: linear-gradient(180deg, #fccb90 0%, #d57eeb 100%); }
+
+        /* 初始/激活状态 */
+        .peeker.left { left: 40%; top: 40%; transform: translateZ(-250px) scale(0.1); }
+        .peeker.right { right: 40%; top: 40%; transform: translateZ(-250px) scale(0.1); }
+
+        body.mouse-in .peeker { opacity: 1; }
+        body.mouse-in .peeker.l1 { left: -110px; top: 10%; transform: translateZ(-80px) rotateZ(-12deg); }
+        body.mouse-in .peeker.l2 { left: -80px; bottom: -10%; transform: translateZ(-150px) rotateZ(-12deg); }
+        body.mouse-in .peeker.r1 { right: -110px; top: 10%; transform: translateZ(-80px) rotateZ(12deg); }
+        body.mouse-in .peeker.r2 { right: -80px; bottom: -10%; transform: translateZ(-150px) rotateZ(12deg); }
+
+        /* --- B. 底部排排站样式 --- */
+        .bottom-row {
+            position: absolute; bottom: -800px; left: 0; width: 100%;
+            display: flex; 
+            justify-content: center; /* 居中对齐，但通过巨大的 gap 避开中间 */
+            align-items: flex-end; 
+            gap: 600px; /* 强制避开中间直径 600px 的球体区域，预留 700px 间距 */
+            padding: 0 40px; 
+            z-index: 5;
+            pointer-events: none;
+            transition: bottom 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+            transform: translateZ(500px);
+        }
+
+        .monster-group {
+            display: flex;
+            gap: 40px; 
+        }
+
+        body.mouse-in .bottom-row { bottom: 18px; }
+
+        .standing-monster {
+            width: 75px; height: 130px; border-radius: 38px 38px 0 0;
+            display: flex; justify-content: center; align-items: flex-start; padding-top: 22px;
+            box-shadow: 0 -5px 25px rgba(0,0,0,0.15);
+            animation: monsterFloat 3.5s ease-in-out infinite alternate;
+            flex-shrink: 0;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        /* 让怪兽起伏错落：设置不同的延迟和时长 */
+        .monster-group .standing-monster:nth-child(1) { animation-delay: -0.5s; animation-duration: 3s; }
+        .monster-group .standing-monster:nth-child(2) { animation-delay: -1.2s; animation-duration: 4.2s; }
+        .monster-group .standing-monster:nth-child(3) { animation-delay: -2.8s; animation-duration: 3.8s; }
+        .monster-group .standing-monster:nth-child(4) { animation-delay: -1.5s; animation-duration: 4.5s; }
+
+        /* 左右两组也可以有整体的节奏差 */
+        .bottom-row .monster-group:last-child .standing-monster {
+            animation-delay: -2s;
+        }
+
+        /* 响应式调整：屏幕太小时缩小间距 */
+        @media (max-width: 1200px) {
+            .monster-group { gap: 15px; }
+            .standing-monster { width: 60px; height: 110px; }
+        }
+
+        /* 底部循环色彩 - 增强色彩感 */
+        .standing-monster:nth-child(5n+1) { background: linear-gradient(to top, #e6e9f0 0%, #eef1f5 100%); }
+        .standing-monster:nth-child(5n+2) { background: linear-gradient(to top, #a18cd1 0%, #fbc2eb 100%); }
+        .standing-monster:nth-child(5n+3) { background: linear-gradient(to top, #84fab0 0%, #8fd3f4 100%); }
+        .standing-monster:nth-child(5n+4) { background: linear-gradient(to top, #ff9a9e 0%, #fecfef 100%); }
+        .standing-monster:nth-child(5n+5) { background: linear-gradient(to top, #f6d365 0%, #fda085 100%); }
+
+        @keyframes monsterFloat {
+            from { transform: translateY(0); }
+            to { transform: translateY(-16px); }
+        }
+
+        /* --- C. 眼睛通用样式 --- */
+        .peeker-eye, .monster-eye {
+            width: 32px; height: 32px;
+            background: #ffffff !important; 
+            border-radius: 50%; position: relative; overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            flex-shrink: 0;
+            z-index: 10;
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+        .peeker-pupil, .monster-pupil {
+            width: 16px; height: 16px;
+            background: #000000 !important; 
+            border-radius: 50%; position: absolute; top: 50%; left: 50%;
+            transform: translate(calc(-50% + var(--eye-x) * 0.45), calc(-50% + var(--eye-y) * 0.45));
+            transition: transform 0.1s ease-out;
+        }
+
+        /* 修复 peeker 眼睛布局 */
+        .peeker {
+            justify-content: flex-start; /* 眼睛移至顶部 */
+            align-items: center;
+            padding-top: 20px; /* 通过 padding 细调眼睛到头顶的距离 */
+            z-index: -1;
+        }
+        
+        body.mouse-in .peeker { 
+            opacity: 1; 
+            z-index: 5; /* 弹出时提升层级，但保持在球体 z-index 10 之下 */
+        }
+
+        .peeker-eye {
+            margin-top: 5px;
+        }
+
+
+
+    </style>
+</head>
+<body>
+
+    <!-- 调色板 UI (已隐藏)
+     <div class="color-palette">
+        <div class="palette-title">球体内部配色 (1-7)</div>
+        <div class="control-list" id="sphere-controls"></div>
+        
+        <div class="palette-title" style="margin-top:15px">外部氛围与副球</div>
+        <div class="control-list" id="ambient-controls"></div>
+        
+        <button class="save-btn" id="manual-save-btn">保存当前配置</button>
+        <div class="save-status" id="save-status">配置已同步云端</div>
+    </div>
+    -->
+     
+    <div class="scene" id="scene">
+        <div class="sphere-container">
+
+            <!-- 1. 侧边弹窗怪兽 (放在球体容器内) -->
+            <div class="peeker left l1">
+                <div class="peeker-eye"><div class="peeker-pupil"></div></div>
+            </div>
+            <div class="peeker left l2">
+                <div class="peeker-eye"><div class="peeker-pupil"></div></div>
+            </div>
+            <div class="peeker right r1">
+                <div class="peeker-eye"><div class="peeker-pupil"></div></div>
+            </div>
+            <div class="peeker right r2">
+                <div class="peeker-eye"><div class="peeker-pupil"></div></div>
+            </div>
+            
+            <div class="blur-sphere"></div>
+            <div class="halo"></div>
+            <div class="sphere">
+                <div class="face">
+                    <div class="eyes">
+                        <div class="eye"><div class="pupil"></div></div>
+                        <div class="eye"><div class="pupil"></div></div>
+                    </div>
+                    <div class="mouth"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. 底部排排站怪兽 (分为左右两组，避开中间球体) -->
+    <div class="bottom-row">
+        <div class="monster-group">
+            <div class="standing-monster"><div class="monster-eye"><div class="monster-pupil"></div></div></div>
+            <div class="standing-monster"><div class="monster-eye"><div class="monster-pupil"></div></div></div>
+            <div class="standing-monster"><div class="monster-eye"><div class="monster-pupil"></div></div></div>
+            
+        </div>
+        <div class="monster-group">
+            <div class="standing-monster"><div class="monster-eye"><div class="monster-pupil"></div></div></div>
+            <div class="standing-monster"><div class="monster-eye"><div class="monster-pupil"></div></div></div>
+            <div class="standing-monster"><div class="monster-eye"><div class="monster-pupil"></div></div></div>
+           
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+        const root = document.documentElement;
+        const saveStatus = document.getElementById('save-status');
+        const saveBtn = document.getElementById('manual-save-btn');
+        let saveTimeout;
+
+        const defaultConfig = {
+            '--color-1': { hex: '#ffffff', alpha: 0.45, label: '高光1' },
+            '--color-2': { hex: '#FF7CDB', alpha: 1.00, label: '流体2' },
+            '--color-3': { hex: '#FFDC2E', alpha: 1.00, label: '流体3' },
+            '--color-4': { hex: '#FF3C00', alpha: 1.00, label: '流体4' },
+            '--color-5': { hex: '#FF33C7', alpha: 1.00, label: '流体5' },
+            '--color-6': { hex: '#FF33FF', alpha: 1.00, label: '流体6' },
+            '--color-7': { hex: '#FF3333', alpha: 1.00, label: '基准7' },
+            '--halo-color': { hex: '#ab47bc', alpha: 0.30, label: '氛围光晕' },
+            '--blur-sphere-color': { hex: '#ab47bc', alpha: 0.40, label: '底部副球' }
+        };
+
+        const hexToRgba = (hex, alpha) => {
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        };
+
+        const createControls = (config) => {
+            const sphereContainer = document.getElementById('sphere-controls');
+            const ambientContainer = document.getElementById('ambient-controls');
+            if (!sphereContainer || !ambientContainer) {
+                // 如果 UI 已隐藏，只应用 CSS 变量
+                Object.entries(defaultConfig).forEach(([varName, info]) => {
+                    const item = config[varName] || info;
+                    root.style.setProperty(varName, hexToRgba(item.hex, item.alpha));
+                });
+                return;
+            }
+            sphereContainer.innerHTML = '';
+            ambientContainer.innerHTML = '';
+
+            Object.entries(defaultConfig).forEach(([varName, info]) => {
+                const item = config[varName] || info;
+                const row = document.createElement('div');
+                row.className = 'control-row';
+                row.innerHTML = `
+                    <div class="control-label">${info.label}</div>
+                    <div class="color-input-wrapper">
+                        <input type="color" data-var="${varName}" value="${item.hex}">
+                    </div>
+                    <input type="range" class="opacity-slider" data-var="${varName}" min="0" max="1" step="0.01" value="${item.alpha}">
+                `;
+
+                if (varName.startsWith('--color')) {
+                    sphereContainer.appendChild(row);
+                } else {
+                    ambientContainer.appendChild(row);
+                }
+
+                root.style.setProperty(varName, hexToRgba(item.hex, item.alpha));
+            });
+
+            document.querySelectorAll('input').forEach(input => {
+                input.addEventListener('input', () => {
+                    const varName = input.getAttribute('data-var');
+                    const colorVal = document.querySelector(`input[type="color"][data-var="${varName}"]`).value;
+                    const alphaVal = document.querySelector(`input[type="range"][data-var="${varName}"]`).value;
+                    
+                    root.style.setProperty(varName, hexToRgba(colorVal, alphaVal));
+
+                    clearTimeout(saveTimeout);
+                    saveTimeout = setTimeout(saveConfig, 1000);
+                });
+            });
+        };
+
+        const saveConfig = async () => {
+            const user = auth.currentUser;
+            if (!user) return;
+            
+            if (saveStatus) {
+                saveStatus.innerText = "正在同步...";
+                saveStatus.style.opacity = "1";
+            }
+            
+            const config = {};
+            const rows = document.querySelectorAll('.control-row');
+            if (rows.length > 0) {
+                rows.forEach(row => {
+                    const color = row.querySelector('input[type="color"]');
+                    const range = row.querySelector('input[type="range"]');
+                    const varName = color.getAttribute('data-var');
+                    config[varName] = { hex: color.value, alpha: parseFloat(range.value) };
+                });
+            }
+            try {
+                await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'appearance_v2'), config);
+                if (saveStatus) {
+                    saveStatus.innerText = "配置已同步云端";
+                    setTimeout(() => { saveStatus.style.opacity = '0'; }, 2000);
+                }
+            } catch (e) { 
+                console.error("Save failed:", e); 
+                if (saveStatus) saveStatus.innerText = "同步失败，请重试";
+            }
+        };
+
+        if (saveBtn) saveBtn.addEventListener('click', saveConfig);
+
+        const initAuth = async () => {
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                await signInWithCustomToken(auth, __initial_auth_token);
+            } else { await signInAnonymously(auth); }
+        };
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                const docSnap = await getDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'appearance_v2'));
+                createControls(docSnap.exists() ? docSnap.data() : defaultConfig);
+            }
+        });
+
+        initAuth();
+    </script>
+
+    <script>
+        const scene = document.getElementById('scene');
+        document.addEventListener('mousemove', (e) => {
+            const x = (e.clientX / window.innerWidth - 0.5) * 2;
+            const y = (e.clientY / window.innerHeight - 0.5) * 2;
+            scene.style.setProperty('--tilt-x', `${-y * 12}deg`);
+            scene.style.setProperty('--tilt-y', `${x * 15}deg`);
+            scene.style.setProperty('--move-x', `${x * 40}px`);
+            scene.style.setProperty('--move-y', `${y * 25}px`);
+            document.documentElement.style.setProperty('--eye-x', `${x * 18}px`);
+            document.documentElement.style.setProperty('--eye-y', `${y * 10}px`);
+        });
+    </script>
+    
+    <script>
+        // A. 监听鼠标是否在窗口内
+        document.addEventListener('mouseenter', () => {
+            document.body.classList.add('mouse-in');
+        });
+
+        document.addEventListener('mouseleave', () => {
+            document.body.classList.remove('mouse-in');
+        });
+
+        // B. 初始检测（如果用户刷新时鼠标已在窗口内）
+        document.addEventListener('mousemove', () => {
+            if (!document.body.classList.contains('mouse-in')) {
+                document.body.classList.add('mouse-in');
+            }
+        }, { once: true });
+    </script>
+    
+</body>
+</html>

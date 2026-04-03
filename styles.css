@@ -432,17 +432,131 @@ html {
 }
 
 .hero-background {
-    background-image: url('public/images/bg.jpg');
+    /* background-image: url('public/images/bg.jpg'); 替换为 iframe 动态背景 */
+    background-color: #ffffff00; /* 如果 iframe 加载失败，至少有一个背景色 */
     position: absolute;
     inset: 0;
-    background-size: cover;
-    background-position: center;
+    overflow: hidden;
+}
+
+.hero-background iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+    pointer-events: auto; /* 允许交互 */
+    z-index: 10; /* 提高层级，置于圆点和彩带上方，仅在文字下方 */
+}
+
+/* 装饰圆点样式 */
+.hero-dot {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px); /* 增加模糊度，更柔和 */
+    z-index: 1; /* 放到最底层 */
+    pointer-events: none;
+    opacity: 0.3; /* 降低透明度，使其若隐若现 */
+}
+
+.dot-1 {
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, #ffdb15, transparent);
+    top: 5%;
+    right: -5%; /* 溢出边缘，增加张力 */
+}
+
+.dot-2 {
+    width: 250px;
+    height: 250px;
+    background: radial-gradient(circle, #4ade80, transparent);
+    bottom: 10%;
+    right: 10%;
+}
+
+.dot-3 {
+    width: 180px;
+    height: 180px;
+    background: radial-gradient(circle, #f472b6, transparent);
+    top: 35%;
+    right: 20%;
+}
+
+.dot-4 {
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, #ae76f9ba, transparent);
+    bottom: -30%;
+    right: 70%;
+}
+
+.dot-5 {
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, #ffec6d9c, transparent);
+    top: 10%;
+    right: 80%;
 }
 
 .hero-overlay {
     position: absolute;
     inset: 0;
-    background: rgba(0, 0, 0, 0.1);
+    background: rgba(0, 0, 0, 0.05); /* 稍微降低遮罩透明度，让大眼萌更清晰 */
+    pointer-events: none; /* 允许鼠标事件穿透到下方的 iframe */
+    z-index: 15; /* 确保在 iframe 之上 */
+}
+
+/* 碎彩带容器 */
+.confetti-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 1; /* 位于大眼萌 (z-index: 2) 下方 */
+    perspective: 600px; /* 开启 3D 空间 */
+}
+
+/* 碎彩带基础样式 */
+.confetti {
+    position: absolute;
+    top: -50px;
+    pointer-events: none;
+    z-index: 3;
+    animation: fall linear forwards; /* 执行一次并保留结束状态，由 JS 负责清理 */
+}
+
+.confetti-inner {
+    width: 100%;
+    height: 100%;
+    opacity: 0.8;
+    animation: wobble ease-in-out infinite;
+    transform-style: preserve-3d;
+}
+
+/* 下落动画：垂直移动 + 水平漂移 + 方向偏转 */
+@keyframes fall {
+    0% {
+        transform: translateY(0) translateX(0) rotateZ(var(--initial-angle));
+    }
+    100% {
+        /* 下落的同时向目标方向偏转，并保持初始旋转 */
+        transform: translateY(115vh) translateX(var(--drift)) rotateZ(calc(var(--initial-angle) + var(--tilt-angle)));
+    }
+}
+
+/* 翻转动画：绕长轴（X轴）自转，模拟纸条在空中翻转 */
+@keyframes wobble {
+    0% {
+        transform: rotateX(0deg);
+    }
+    100% {
+        /* 实现绕长轴 360 度自转 */
+        transform: rotateX(360deg);
+    }
 }
 
 .hero-content {
@@ -452,61 +566,69 @@ html {
     padding: 0 20px;
     display: flex;
     align-items: center;
-    justify-content: center; /* 添加这一行使内容水平居中 */
+    justify-content: center; /* 页面居中 */
+    pointer-events: none;
 }
 
 .hero-text {
-    max-width: 1000px;
-    color: white;
-    text-align: center; /* 添加这一行使文本居中对齐 */
+    max-width: 1000px; 
+    color: #333;
+    text-align: center; /* 文本居中 */
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center; /* 确保内容垂直居中 */ 
-    z-index: 1; /* 确保文本在背景之上 */
+    align-items: center; /* 内部元素居中 */
+    justify-content: center;
+    z-index: 1;
+    pointer-events: none;
+    margin-top: -250px; /* 向上移动 */
 }
-
-
 
 .hero-text h1 {
     font-family: "acorn", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;;
-    font-size: 8rem;
-    margin-bottom: 100px;
-    margin-top: 80px;
-    text-align: center;
-    display: flex;
-    align-items: center;
-    /* 文本居中 */
-}
-.hero-text p {
-    font-size: 20px;
+    font-size: 6rem; /* 稍微缩小一点标题，在大眼萌旁边更和谐 */
     margin-bottom: 10px;
-    text-align: center;
-    display: flex;
-    opacity: 0.9;
+    margin-top: 0;
+    text-align: left;
 }
 
-/* 添加响应式设计，防止文字在小屏幕上被挤压 */
+.hero-text p {
+    font-size: 18px;
+    margin-bottom: 12px;
+    text-align: left;
+    opacity: 0.9;
+    line-height: 1.6;
+}
+
 @media (max-width: 1200px) {
     .hero-text h1 {
-        font-size: 6rem;
+        font-size: 5rem;
+    }
+}
+
+@media (max-width: 992px) {
+    .hero-content {
+        justify-content: center; /* 在平板尺寸，重新居中文字 */
+        flex-direction: column;
+    }
+    .hero-text {
+        text-align: center;
+        align-items: center;
+        margin-top: 40%; /* 给上方的大眼萌留出一点空间 */
+    }
+    .hero-text h1 {
+        font-size: 4rem;
+        text-align: center;
     }
 }
 
 @media (max-width: 768px) {
     .hero-text h1 {
-        font-size: 4rem;
+        font-size: 3rem;
     }
     
     .hero-text p {
-        font-size: 0.9rem;
-        max-width: 90%; /* 限制段落宽度 */
-        margin: 0 auto; /* 居中显示 */
-    }
-    
-    /* 确保在小屏幕上tabs部分有足够的顶部间距 */
-    .tabs {
-        padding-top: 40px;
+        font-size: 1rem;
+        max-width: 90%;
     }
 }
 
